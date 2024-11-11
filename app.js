@@ -1,20 +1,40 @@
+require('dotenv').config();
+// server.js (or wherever your routes are defined)
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const contactRoute = require('./routes/contact');
-
-dotenv.config();
-
+const cors = require('cors');
 const app = express();
+app.use(cors()); // Enable CORS if backend and frontend are on different origins
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch((error) => console.error('MongoDB connection error:', error));
+// Connect to MongoDB Atlas
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-app.use('/api', contactRoute);
+const contactSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  date: { type: Date, default: Date.now }
+});
 
-const PORT = process.env.PORT || 3001;
+const Contact = mongoose.model('Contact', contactSchema);
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const contact = new Contact(req.body);
+    await contact.save();
+    res.status(201).json({ message: 'Thank you for contacting us!' });
+  } catch (error) {
+    console.error('Error saving contact message:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
