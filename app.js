@@ -1,37 +1,65 @@
-import React, { useState } from 'react';
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const AWS = require('aws-sdk');
+const app = express();
 
-const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+app.use(cors());
+app.use(express.json());
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+// Set up AWS Secrets Manager
+const client = new AWS.SecretsManager({
+  region: 'us-east-1', // Set your region
+});
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('https://44.192.117.126:3000/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      alert(data.message); // Show confirmation to the user
-    } catch (error) {
-      console.error('Error:', error);
+// Function to retrieve MongoDB URI from AWS Secrets Manager
+async function getMongoURI() {
+  try {
+    const data = await client.getSecretValue({ SecretId: 'myapp/mongouri' }).promise();
+    if ('SecretString' in data) {
+      const secret = JSON.parse(data.SecretString);
+      return secret.MONGO_URI;
     }
-  };
+  } catch (err) {
+    console.error("Error retrieving MongoDB URI from Secrets Manager:", err);
+    throw err;
+  }
+}
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Name" required />
-      <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required />
-      <textarea name="message" value={formData.message} onChange={handleChange} placeholder="Message" required />
-      <button type="submit">Submit</button>
-    </form>
-  );
-};
+// Connect to MongoDB Atlas
+(async () => {
+  const mongoURI = await getMongoURI();
+  mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+    .then(() => console.log("MongoDB connected successfully"))
+    .catch((err) => console.error("Error connecting to MongoDB:", err));
+})();
 
-export default Contact;
+const contactSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  date: { type: Date, default: Date.now }
+});
+
+const Contact = mongoose.model('Contact', contactSchema);
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const contact = new Contact(req.body);
+    await contact.save();
+    res.status(201).json({ message: 'Thank you for contacting us!' });
+  } catch (error) {
+    console.error('Error saving contact message:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
