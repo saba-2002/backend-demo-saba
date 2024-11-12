@@ -4,7 +4,7 @@ phases:
   install:
     commands:
       - echo "Installing dependencies..."
-      - cd/home/ubuntu
+      - cd /home/ubuntu
       - cd backend-demo-saba
       - npm install
 
