@@ -4,15 +4,15 @@ phases:
   install:
     commands:
       - echo "Installing dependencies..."
-      - cd backend
+      - cd backend-demo-saba
       - npm install
 
   build:
     commands:
       - echo "Starting the server..."
-      - node server.js
+      - node app.js
 
 artifacts:
   files:
     - '**/*'
-  base-directory: backend
+  base-directory: backend-demo-saba
