@@ -1,40 +1,37 @@
-require('dotenv').config();
-// server.js (or wherever your routes are defined)
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const app = express();
-app.use(cors()); // Enable CORS if backend and frontend are on different origins
-app.use(express.json());
+import React, { useState } from 'react';
 
-// Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const Contact = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
-const contactSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  message: String,
-  date: { type: Date, default: Date.now }
-});
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-const Contact = mongoose.model('Contact', contactSchema);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('https://44.192.117.126:3000/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      alert(data.message); // Show confirmation to the user
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
-app.post('/api/contact', async (req, res) => {
-  try {
-    const contact = new Contact(req.body);
-    await contact.save();
-    res.status(201).json({ message: 'Thank you for contacting us!' });
-  } catch (error) {
-    console.error('Error saving contact message:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Name" required />
+      <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required />
+      <textarea name="message" value={formData.message} onChange={handleChange} placeholder="Message" required />
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+export default Contact;
