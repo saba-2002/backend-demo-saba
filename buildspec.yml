@@ -4,7 +4,7 @@ phases:
   install:
     commands:
       - echo "Installing dependencies..."
-      - cd /codebuild/output/src791908036/src/github.com/saba-2002/backend-demo-saba 
+      - cd $CODEBUILD_SRC_DIR  # Use dynamic source directory
       - npm install
 
   build:
@@ -15,4 +15,4 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: backend-demo-saba
+
