@@ -4,7 +4,7 @@ phases:
   install:
     commands:
       - echo "Installing dependencies..."
-      - cd cd /codebuild/output/src791908036/src/github.com/saba-2002/backend-demo-saba 
+      - cd /codebuild/output/src791908036/src/github.com/saba-2002/backend-demo-saba 
       - npm install
 
   build:
